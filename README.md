@@ -6,9 +6,11 @@ I apply 2D and 3D image processing in this project. My goal is to process the co
 <h2 style="font-size: 20px;">Take notice</h2>
 Carefully read the 'requirements.txt' file to install the correct versions of the libraries used in this project.
 <h2 style="font-size: 20px;">Instruction</h2>
-*GetPointCloud.py*
+*_Open3D.py_*
+
 Connect your laptop to KinectV2 and execute the code. You can modify the file name, and the file will be saved with a .ply extension. Here is a picture of the PointCloud process captured by KinectV2.
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/75b1515a-aedf-444e-b09a-4a3ac52f5c42)
-*Open3D.py*
+*_Open3D.py_*
 Choose some models from the "3D_Models" folder and run them to familiarize yourself with the code. Here are pictures show of how code process
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/f14d25a6-a50b-4bf8-9356-7a5e4be94ae6)
+![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/4e0ebd0e-2e7f-4fc5-ad52-9e8de25e52fa)
