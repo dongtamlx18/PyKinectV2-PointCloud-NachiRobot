@@ -6,11 +6,28 @@ I apply 2D and 3D image processing in this project. My goal is to process the co
 <h2 style="font-size: 20px;">Take notice</h2>
 Carefully read the 'requirements.txt' file to install the correct versions of the libraries used in this project.
 <h2 style="font-size: 20px;">Instruction</h2>
-*_Open3D.py_*
+
+*_GetPointCloud.py_*
 
 Connect your laptop to KinectV2 and execute the code. You can modify the file name, and the file will be saved with a .ply extension. Here is a picture of the PointCloud process captured by KinectV2.
+
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/75b1515a-aedf-444e-b09a-4a3ac52f5c42)
+
 *_Open3D.py_*
-Choose some models from the "3D_Models" folder and run them to familiarize yourself with the code. Here are pictures show of how code process
+
+Choose some models from the "3D_Models" folder and run them to familiarize yourself with the code. Here are pictures demonstrating how the code processes data.
+
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/f14d25a6-a50b-4bf8-9356-7a5e4be94ae6)
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/4e0ebd0e-2e7f-4fc5-ad52-9e8de25e52fa)
+
+*_EdgeDetection.py_*
+
+
+The above code is used to determine the contours of an object within the specified range. Subsequently, it calculates the rotation angle of the object relative to the horizontal axis. The obtained angle always falls within the range [0; 90].
+![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/1e942306-db1b-45ea-a7e2-5f4b522fa36e)
+
+*_Stastic_assem.py_*
+*_Dynamic_assem.py_*
+For these two files, please watch the video below: _https://youtu.be/-WAg4vb33Nc?si=PIwfnUG8BE3SGr9f_
+
+--------------------------_**Thank you for Reading**_-------------------------
