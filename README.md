@@ -2,6 +2,7 @@
 Image Processing-based Control of a 6-DOF Robotic Arm for Assemblig Tilted Objects on a ConveyorBelt. Using OpenCV and Open3D library to process in this project.
 -------------------------- Python version 3.6.3 -----------------------------
 # Xyz
+<h1 style="font-size: 24px;">Tiêu đề lớn</h1>
 <style>
   /* Kích thước chữ là 20px */
   body {
