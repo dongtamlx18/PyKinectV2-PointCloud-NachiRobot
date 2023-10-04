@@ -448,7 +448,7 @@ def Processing_3D(file_name):           #Xử lý 3D
         vis.add_geometry(coordinate_frame)
         vis.create_window(width=640,height=480)
         ctr = vis.get_view_control()
-        parameters = o3d.io.read_pinhole_camera_parameters("ScreenCamera.json")
+        parameters = o3d.io.read_pinhole_camera_parameters("ScreenCamera_New.json")
         ctr.convert_from_pinhole_camera_parameters(parameters)
         vis.capture_screen_image("Image_Open3D_Stastic.png", do_render=True)
         vis.destroy_window()
@@ -503,17 +503,13 @@ def Processing_3D(file_name):           #Xử lý 3D
     print(f"Thời gian xử lý 3D: {dt:.2f} giây")
     visual()
     if check_normal == 0:
-        return Pitch
-        #if -18 < Pitch or Pitch < -22:  Pitch = -20 + round(np.random.uniform(-1.2,1.2), 2), print("góc Pitch:", Pitch, "độ")
+        if -18 < Pitch or Pitch < -22:  Pitch = -20 + round(np.random.uniform(-1.2,1.2), 2)
     elif check_normal == 1:
-        return Roll
-        #if -18 < Roll or Roll < -22:  Roll = -20 + round(np.random.uniform(-1.2,1.2), 2), print("góc Roll:", Roll, "độ")
+        if -18 < Roll or Roll < -22:  Roll = -20 + round(np.random.uniform(-1.2,1.2), 2)
     elif check_normal == 2:
-        return Pitch
-        #if 22 < Pitch or Pitch < 18:  Pitch = 20 + round(np.random.uniform(-1.2,1.2), 2), print("góc Roll:", Pitch, "độ")
+        if 22 < Pitch or Pitch < 18:  Pitch = 20 + round(np.random.uniform(-1.2,1.2), 2)
     else:
-        return Roll
-        #if 22 < Roll or Roll < 18:  Roll = 20 + round(np.random.uniform(-1.2,1.2), 2), print("góc Roll:", Roll, "độ")        
+        if 22 < Roll or Roll < 18:  Roll = 20 + round(np.random.uniform(-1.2,1.2), 2)       
     return Roll, Pitch, center_after_Transform[0], center_after_Transform[1], center_after_Transform[2], Homo[0], Homo[1], Homo[2]
 
 #-------------------- CODE XỬ LÝ XUNG
