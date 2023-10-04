@@ -1,0 +1,5 @@
+numpy                1.19.5
+open3d               0.15.1
+opencv-python        3.4.2.16
+pykinect2            0.1.0
+
