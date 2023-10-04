@@ -1,144 +1,261 @@
-import ctypes
-import _ctypes
-import sys
-import threading
-import time
 import numpy as np
-from pykinect2 import PyKinectV2
-from pykinect2 import PyKinectRuntime
-from pykinect2.PyKinectV2 import *
 import cv2
+from pykinect2 import PyKinectRuntime
+from pykinect2 import PyKinectV2
+import mapper
+import PointCloud
+import open3d as o3d
+import ctypes
+from pykinect2.PyKinectV2 import *
+import socket, time
 
 
+##Khai báo các thông tin Servo robot
+PORT_NUM = 48952
+SEND_DATA_SIZE = 8
+SEND_BUFFER_LEN = SEND_DATA_SIZE * 6
+REC_DATA_SIZE = 12
+REC_DATA_NUM = 7
+REC_IO_DATA_SIZE = 3
+REC_BUFFER_LEN = REC_DATA_SIZE * 6 + REC_IO_DATA_SIZE + REC_DATA_NUM
 
 
+##define a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_address = (('192.168.1.1', PORT_NUM))
+
+
+## Khởi tạo các IO, liên quan đến biến V7%
+MACHINE_ABS_LINEAR = 1  # MOVE BY ABS COORDINATE VALUE RESPECT MACHINE COORDINATE FRAME USING LINEAR INTERPOLATION
+MACHINE_ABS_JOINT = 2  # ...
+MACHINE_REALATIVE_LINEAR = 3  # ...
+MACHINE_REALATIVE_JOINT = 4  # MOVE BY REALATIVE COORDINATE VALUE RESPECT MACHINE COORDINATE FRAME USING JOINT INTERPOLATION
+JOINT_ABS_LINEAR = 5  # MOVE BY ABS COORDINATE VALUE RESPECT JOINT COORDINATE FRAME USING LINEAR INTERPOLATION
+JOINT_ABS_JOINT = 6  # ...
+JOINT_REALATIVE_LINEAR = 7  # ...
+JOINT_REALATIVE_JOINT = 8  # MOVE BY REALATIVE COORDINATE VALUE RESPECT JOINT COORDINATE FRAME USING JOINT INTERPOLATION
+OPEN_COMPRESSED_AIR = 9
+CLOSE_COMPRESSED_AIR = 10
+
+
+def socket_initalize():
+    print('Connecting to {} port {}'.format(*server_address))
+    # Connect the socket to the port where the server is listening
+    sock.connect(server_address)
+ 
+def socket_close():
+    sock.close()
+
+
+def tool_coordinate():   #recieve current tool position  
+    M = "P"
+    M = bytes(M, 'utf-8') #M = M.decode('utf-8')
+    sock.sendall(M)
+    data = sock.recv(1024)
+    data = data.decode("utf-8")
+    data = data.split(",")
+    print("-----------------------")
+    print("Current Tool Position")
+    print("-----------------------")  
+    ###
+    print('X    :  ', data[0])
+    print('Y    :  ', data[1])
+    print('Z    :  ', data[2])
+    print('Roll :  ', data[3])
+    print('Pitch:  ', data[4])
+    print('Yaw  :  ', data[5])
+
+
+def joint_coordinate(): #receive Joint radiant
+    M = "J"
+    M = bytes(M, 'utf-8')
+    sock.sendall(M)
+    data = sock.recv(1024)
+    data = data.decode("utf-8")
+    data = data.split(",")
+    print("-----------------------")
+    print("Current Joint Position")
+    print("-----------------------")
+    ###
+    print('Joint 1 :  ', data[0])
+    print('Joint 2 :  ', data[1])
+    print('Joint 3 :  ', data[2])
+    print('Joint 4 :  ', data[3])
+    print('Joint 5 :  ', data[4])
+    print('Joint 6 :  ', data[5])
+
+
+def move_robot(move_coord, move_mode):
+    #wait for 'REA' status
+    M = bytes("A", 'utf-8')
+    signal = "busy"
+    while True:
+        sock.sendall(M)
+        signal = sock.recv(3)
+        if signal == b'REA':
+            break
+    #prepare data send to Server
+    x = "{0:8.2f}".format(move_coord[0])
+    y = "{0:8.2f}".format(move_coord[1])
+    z = "{0:8.2f}".format(move_coord[2])
+    r = "{0:8.2f}".format(move_coord[3])
+    p = "{0:8.2f}".format(move_coord[4])
+    ya = "{0:8.2f}".format(move_coord[5])
+    mode = "{:0>3d}".format(move_mode)
+    #biding data and converting
+    message = x + y + z + r + p + ya + mode
+    message = bytes(message, 'utf-8')
+    #send data 'message'
+    sock.sendall(message)
+    #wait for 'FIN' status
+    M = bytes("A", 'utf-8')
+    signal = "busy"
+    while True:
+        signal = sock.recv(3)
+        if signal == b'Fin':
+            break
+   
+def IO_robot(move_mode):
+    # wait for 'REA' status
+    M = bytes("A", 'utf-8')
+    signal = "busy"
+    while True:
+        sock.sendall(M)
+        signal = sock.recv(3)
+        if signal == b'REA':
+            break
+    #data preparation
+    x = "{0:8.2f}".format(0)
+    y = "{0:8.2f}".format(0)
+    z = "{0:8.2f}".format(0)
+    r = "{0:8.2f}".format(0)
+    p = "{0:8.2f}".format(0)
+    ya = "{0:8.2f}".format(0)
+    mode = "{:0>3d}".format(move_mode)
+    # binding data and converting
+    message = x + y + z + r + p + ya + mode
+    message = bytes(message, 'utf-8')
+    #send data 'message'
+    sock.sendall(message)
+    # wait for machine 'FIN' status
+    M = bytes("A", 'utf-8')
+    signal = "busy"
+    while True:
+        signal = sock.recv(3)
+        if signal == b'FIN':
+            break
+
+
+#Tạo hàm ánh xạ ảnh màu, với ảnh độ sâu, tạo vùng ROI
+#def color_2_depth():
+#    color_2_depth = mapper.color_2_depth_space()
 def color_2_depth_space(kinect, color_space_point, depth_frame_data):
-    """
-
-    :param kinect: kinect class
-    :param color_space_point: _ColorSpacePoint from PyKinectV2
-    :param depth_frame_data: kinect._depth_frame_data
-    :param show: shows aligned image with color and depth
-    :return: mapped depth to color frame
-    """
     # Map Depth to Color Space
     depth2color_points_type = color_space_point * np.int(512 * 424)
     depth2color_points = ctypes.cast(depth2color_points_type(), ctypes.POINTER(color_space_point))
-    
     kinect._mapper.MapDepthFrameToColorSpace(ctypes.c_uint(512 * 424), depth_frame_data, kinect._depth_frame_data_capacity, depth2color_points)
     # depth_x = depth2color_points[color_point[0] * 1920 + color_point[0] - 1].x
     # depth_y = depth2color_points[color_point[0] * 1920 + color_point[0] - 1].y
     colorXYs = np.copy(np.ctypeslib.as_array(depth2color_points, shape=(kinect.depth_frame_desc.Height * kinect.depth_frame_desc.Width,)))  # Convert ctype pointer to array
     colorXYs = colorXYs.view(np.float32).reshape(colorXYs.shape + (-1,))  # Convert struct array to regular numpy array https://stackoverflow.com/questions/5957380/convert-structured-array-to-regular-numpy-array
     colorXYs += 0.5
-    colorXYs = colorXYs.reshape(kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 2).astype(np.int)  # shape
+    colorXYs = colorXYs.reshape(kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 2).astype(np.int)
     colorXs = np.clip(colorXYs[:, :, 0], 0, kinect.color_frame_desc.Width - 1)
     colorYs = np.clip(colorXYs[:, :, 1], 0, kinect.color_frame_desc.Height - 1)
-    
     color_frame = kinect.get_last_color_frame()
     color_img = color_frame.reshape((kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 4)).astype(np.uint8)
     align_color_img = np.zeros((424, 512, 4), dtype=np.uint8)
     align_color_img[:, :] = color_img[colorYs, colorXs, :]
     align_color_img_copy = align_color_img.copy()
     align_color_img_copy = align_color_img_copy[:,:,:3:]
-    # align_color_img[:,:230,:] = (0,0,0,0)
-    # align_color_img[:,308:,:] = (0,0,0,0)
-    # align_color_img[335:, :,:] = (0,0,0,0)
-    cv2.imshow('img', align_color_img)
-    image = cv2.GaussianBlur(align_color_img,(5,5),0) #Gaussian
+    align_color_img_copy[:,:231] = (0,0,0)
+    align_color_img_copy[:,324:] = (0,0,0)
+    align_color_img_copy[:120:, :] = (0,0,0)
+    align_color_img_copy[290:, :] = (0,0,0)
+    cv2.imshow('img', align_color_img_copy)
+    angle, img_name = process2D(align_color_img_copy)
+    if angle is not None and img_name is not None :
+        return angle, img_name
+    else:
+        return None, None
+   
+   
+
+
+#Hàm tạo cờ ngắt, để chụp ảnh'''
+def process2D(image):
+    image = cv2.GaussianBlur(image,(5,5),0) #Gaussian
+    # Chuyển đổi ảnh sang ảnh xám
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("gray", gray)
-    circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,500,
- param1=220,param2=30,minRadius=43, maxRadius=49)
-    if circles is not None:
-        for i in circles[0,:]:
-            # draw the outer circle
-            cv2.circle(image,(i[0],i[1]),i[2],(0,255,0),2)
-            # draw the center of the circle
-            cv2.circle(image,(i[0],i[1]),1,(0,0,255),3)
-        a,b,c = i[0], i[1], i[2]
-        # print("a ",a, "b ", b)  #a <-> x pixel, b <-> y pixel
-        a = np.int(a)
-        b = np.int(b)
-        # print("a' ",a, "b'", b)
-        w_point = depth_2_world(kinect, kinect._depth_frame_data, _CameraSpacePoint, a,b , as_array= True)
-        w_point = w_point*1000
-        p1,p2,p3 = w_point
-        text = f"Center({a},{b} Radius:{c})"
-        text2 = f"world points: {p1:.2f}, {p2:.2f}, {p3:.2f} mm"
-        cv2.putText(image, text, (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-        cv2.putText(image, text2, (5, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        cv2.imshow('detected circles', image)
-        image_calib = image
-        return a,b,w_point, image_calib
-    else:
-        return None, None, None, None
-    
+    #cv2.imshow("gray", gray)
+    # Tạo ngưỡng Threshold để tiền xử lý cho edge
+    #ret, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    #cv2.imshow("thresh", thresh)
+    # Áp dụng bộ lọc Canny để phát hiện biên
+    edges = cv2.Canny(gray, 200, 255)
+    cv2.imshow("edges", edges)
+    # Tìm các đường biên hình vuông
+    _, contours, hierarchy = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Lọc các đường biên hình vuông
+    square_contours = []
+    for contour in contours:
+        perimet = cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, 0.02 * perimet, True)
+        if 210 <= round(perimet,0) <= 235 and len(approx) == 4:
+        #if round(perimet,0) >= 200 and len(approx) == 4:
+            print("perimet", perimet)
+            #        
+            # time.sleep(1)#đợi 1 giây xong lưu ảnh lại
+            square_contours.append(approx)
+            rect = cv2.minAreaRect(contour)
+            angle = rect[2]
+            angle = angle +90 
+            #angle = -angle  #không cần phủ định
+            cv2.drawContours(image, square_contours, 0, (0, 255, 0), 2)        
+            #print(f"đã lưu file {save_img}")
+            text = f"{angle:.2f}"
+            cv2.putText(image, text, (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            cv2.imshow("Square Object Detection", image)
+            save_img = f"Image_Yaw_Calib{count_img}.png"
+            cv2.imwrite(save_img, image)
+            return angle, image
+            #print("góc Yaw: ",angle)
+    return None, None
+    # # Vẽ đường biên hình vuông lên ảnh
+    # cv2.drawContours(image, square_contours, 0, (0, 255, 0), 2)
+    # # Hiển thị ảnh kết quả
+    # cv2.imshow("Square Object Detection", image)
+    # #return None
+#Hàm xử lý ảnh 2D '''
 
-
-# def on_mouse_click(event, x, y, flags, param):
-#     if event == cv2.EVENT_LBUTTONDOWN:
-#         depth_value = img[y,x]
-#         depth_in_mm = depth_value   # đơn vị mm
-#         world_value = depth_data[y,x]
-#         world_points = world_value *1000   # đơn vị mm
-#         depth = depth_data_0[y,x]
-#         depth_mm = depth    # đơn vị mm
-#         print(f"Depth at ({x:}, {y:}): {depth_in_mm:}  mm")
-#         print(f"World points at ({x:}, {y:}): {world_points:}  mm")
-#         print(f"Depth at ({x:}, {y:}): {depth_mm:}  mm")
-#         #print("Depth at ({}, {}): {:} mm".format(x, y, depth_in_meters))
-
-# cv2.namedWindow("img")
-# cv2.setMouseCallback("img", on_mouse_click)
-
-def depth_2_world(kinect, depth_frame_data, camera_space_point, a,b, as_array= True):
-    """
-    :param kinect: kinect class
-    :param depth_frame_data: kinect._depth_frame_data
-    :param camera_space_point: _CameraSpacePoint
-    :param as_array: returns the data as a numpy array
-    :return: returns the DepthFrame mapped to camera space
-    """
-    depth2world_points_type = camera_space_point * np.int(512 * 424)
-    depth2world_points = ctypes.cast(depth2world_points_type(), ctypes.POINTER(camera_space_point))
-    kinect._mapper.MapDepthFrameToCameraSpace(ctypes.c_uint(512 * 424), depth_frame_data, ctypes.c_uint(512 * 424), depth2world_points)
-    points = ctypes.cast(depth2world_points, ctypes.POINTER(ctypes.c_float))
-    data = np.ctypeslib.as_array(points, shape=(424, 512, 3))
-    if not as_array:
-        return depth2world_points
-    else:
-        return data[b,a]
-
-count = 0
-w1,w2,w3 = 0,0,0
-kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Depth | PyKinectV2.FrameSourceTypes_Color)
-while True:
-    if kinect.has_new_depth_frame():
-        x,y,w_points, image_calib = color_2_depth_space(kinect, _ColorSpacePoint, kinect._depth_frame_data)
-        if y is not None and x is not None and w_points is not None and image_calib is not None:
-            count = count + 1
-            if count >= 41:
-                print(f"y: {y}, x: {x} pixel")
-                print(f"w_points: {w_points} mm")
-                w1 += w_points[0]
-                w2 += w_points[1]
-                w3 += w_points[2]
-        if count == 50:
-            w1 = w1/10
-            w2 = w2/10
-            w3 = w3/10
-            cv2.imwrite("Image_Calib980.png", image_calib)
-            print("đã save img_calib")
-            print("count", count)
-            print(f"world_point_final: {w1:.2f}, {w2:.2f}, {w3:.2f}")
-            break
+count = 0 
+if __name__ == '__main__':              #lúc chạy name = '_main_' tắt mấy file khác
+    count_img = 900
+    count = 0
+    process = 0
+    #socket_initalize()
+    kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Depth | PyKinectV2.FrameSourceTypes_Color)
+    while (True):
+        #tạo ra các điều kiện để thực hiện tuần tự
+        if kinect.has_new_depth_frame() and kinect.has_new_color_frame:
+            process2Dx, img_name = color_2_depth_space(kinect, _ColorSpacePoint, kinect._depth_frame_data)
+            if process2Dx is not None and img_name is not None:
+                process = process2Dx
+                text = f"{process:.2f}"
+                print(f"Angle trung bình: {process:.2f} ")
+                cv2.putText(img_name, text, (5, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                while True:
+                    cv2.imshow("angle", img_name)
+                    if cv2.waitKey(1) & 0xff == ord('q'):
+                        print(f"đã break{count}!!!!")
+                        break
+                break   
+                        
+                 
+        #     # Quit using q
         if cv2.waitKey(1) & 0xff == ord('q'):
-            break
+             break
         # if cv2.waitKey(1) & 0xff == ord('s'):
-        #      cv2.imwrite("Savedanh1_8.png", img)
-        #      print("đã print")
-    
-    
-
-cv2.destroyAllWindows()
+        #    cv2.imwrite("Image_Yaw.png", img)
+        #    print("đã print")
+    cv2.destroyAllWindows()
