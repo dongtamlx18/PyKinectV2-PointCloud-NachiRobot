@@ -1,5 +1,5 @@
 # PyKinectV2-PointCloud-NachiRobot
-Image Processing-based Control of a 6-DOF Robotic Arm for Assemblig Tilted Objects on a ConveyorBelt. Using OpenCV and Open3D library to process in this project.
+Image Processing-based Control of a 6-DOF Robotic Arm for Assembling Tilted Objects on a ConveyorBelt. Using OpenCV and Open3D library to process in this project.
 -------------------------- Python version 3.6.3 -----------------------------
 <h2 style="font-size: 20px;">Description</h2>
 I apply 2D and 3D image processing in this project. My goal is to process the coordinates (x, y, z, roll, pitch, yaw) of an object in space, and then control the robotic arm to perform tasks such as grasping the object and fitting it into a designated position. The conveyor belt speed in this project is 10mm/s, and the assembly accuracy of the radius is 2mm. This project is undertaken to fulfill the requirements of my graduation thesis, and I sincerely hope that those who review its content can gain some insights. Thank you.
@@ -27,7 +27,7 @@ The above code is used to determine the contours of an object within the specifi
 
 ![image](https://github.com/dongtamlx18/PyKinectV2-PointCloud-NachiRobot/assets/44941558/1e942306-db1b-45ea-a7e2-5f4b522fa36e)
 
-*_**Stastic_assem.py**_*
+*_**Static_assem.py**_*
 
 *_**Dynamic_assem.py**_*
 
