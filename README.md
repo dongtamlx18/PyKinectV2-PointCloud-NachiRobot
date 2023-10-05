@@ -31,6 +31,6 @@ The above code is used to determine the contours of an object within the specifi
 
 *_**Dynamic_assem.py**_*
 
-For these two files, please watch the video below: _https://youtu.be/-WAg4vb33Nc?si=PIwfnUG8BE3SGr9f_
+For these two files, please watch the video below: _https://www.youtube.com/watch?v=AihO5trXPfM_
 
 --------------------------_**Thank you for Reading**_-------------------------
