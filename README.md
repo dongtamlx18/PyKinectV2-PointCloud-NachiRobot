@@ -4,7 +4,7 @@ Image Processing-based Control of a 6-DOF Robotic Arm for Assemblig Tilted Objec
 <h2 style="font-size: 20px;">Description</h2>
 I apply 2D and 3D image processing in this project. My goal is to process the coordinates (x, y, z, roll, pitch, yaw) of an object in space, and then control the robotic arm to perform tasks such as grasping the object and fitting it into a designated position. The conveyor belt speed in this project is 10mm/s, and the assembly accuracy of the radius is 2mm. This project is undertaken to fulfill the requirements of my graduation thesis, and I sincerely hope that those who review its content can gain some insights. Thank you.
 <h2 style="font-size: 20px;">Take notice</h2>
-Carefully read the 'requirements.txt' file to install the correct versions of the libraries used in this project.
+Carefully read the **requirements.txt** file to install the correct versions of the libraries used in this project.
 <h2 style="font-size: 20px;">Instruction</h2>
 
 *_**GetPointCloud.py**_*
